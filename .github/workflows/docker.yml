@@ -1,0 +1,67 @@
+
+name: Docker Build and Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker:
+    runs-on: self-hosted
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t ghcr.io/${{ github.repository_owner }}/g-lab-backend:latest \
+            .
+
+      - name: Push backend image
+        run: |
+          docker push \
+            ghcr.io/${{ github.repository_owner }}/g-lab-backend:latest
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            -t ghcr.io/${{ github.repository_owner }}/g-lab-frontend:latest \
+            ./frontend-react
+
+      - name: Push frontend image
+        run: |
+          docker push \
+            ghcr.io/${{ github.repository_owner }}/g-lab-frontend:latest
+
+      - name: Deploy to production
+        run: |
+          docker pull ghcr.io/${{ github.repository_owner }}/g-lab-backend:latest
+          docker pull ghcr.io/${{ github.repository_owner }}/g-lab-frontend:latest
+
+          docker stop g-lab-backend g-lab-frontend || true
+          docker rm g-lab-backend g-lab-frontend || true
+
+          docker run -d \
+            --name g-lab-backend \
+            -p 3001:3001 \
+            --env-file ~/.env \
+            ghcr.io/${{ github.repository_owner }}/g-lab-backend:latest
+
+          docker run -d \
+            --name g-lab-frontend \
+            -p 8080:80 \
+            ghcr.io/${{ github.repository_owner }}/g-lab-frontend:latest
