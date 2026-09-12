@@ -449,7 +449,12 @@ export const updateprofule = async (req, res) => {
 //change password
 export const changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    let { currentPassword, newPassword } = req.body || {};
+
+    if (typeof currentPassword === 'object' && currentPassword !== null) {
+      newPassword = currentPassword.newPassword || newPassword;
+      currentPassword = currentPassword.currentPassword;
+    }
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
