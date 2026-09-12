@@ -321,7 +321,25 @@ export const getallProducts = async (req, res) => {
         "cameras": ["Cameras", "Camera", "Cinematic Camera Collection", "Camera Collection"],
         "camera": ["Cameras", "Camera", "Cinematic Camera Collection", "Camera Collection"],
         "drones": ["Drones", "Drone", "Drone Zone", "Next-Gen Drone Collection"],
-        "drone": ["Drones", "Drone", "Drone Zone", "Next-Gen Drone Collection"]
+        "drone": ["Drones", "Drone", "Drone Zone", "Next-Gen Drone Collection"],
+        "hardware": [
+          "Graphic Cards", "Graphics Cards", "Graphic Card", "Cards", "GPU",
+          "Processors", "Processor", "CPU",
+          "RAM", "Memory", "Memory (RAM)",
+          "SSD", "Storage", "SSDs", "SSDs & Storage", "HDD", "Hard Drive",
+          "Motherboards", "Motherboard",
+          "Power Supply", "Power Supplies", "PSU",
+          "PC Cases", "Cases", "Casing", "Case", "Cooler", "Fans"
+        ],
+        "pc hardware": [
+          "Graphic Cards", "Graphics Cards", "Graphic Card", "Cards", "GPU",
+          "Processors", "Processor", "CPU",
+          "RAM", "Memory", "Memory (RAM)",
+          "SSD", "Storage", "SSDs", "SSDs & Storage", "HDD", "Hard Drive",
+          "Motherboards", "Motherboard",
+          "Power Supply", "Power Supplies", "PSU",
+          "PC Cases", "Cases", "Casing", "Case", "Cooler", "Fans"
+        ]
       };
 
       const categoryStr = typeof category === "string" ? category : (Array.isArray(category) ? category.join(",") : "");
