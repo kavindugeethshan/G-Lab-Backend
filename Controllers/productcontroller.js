@@ -301,6 +301,14 @@ export const getallProducts = async (req, res) => {
     // Filter by multiple categories (with alias mapping)
     if (category) {
       const categoryMap = {
+        "hardware": [
+          "Processors", "Processor", "CPU",
+          "Graphic Cards", "Graphics Cards", "Graphic Card", "Cards", "GPU",
+          "RAM", "Memory", "Memory (RAM)",
+          "SSD", "Storage", "SSDs", "SSDs & Storage", "HDD", "Hard Drive",
+          "Motherboards", "Motherboard",
+          "Power Supply", "Power Supplies", "PSU"
+        ],
         "graphics cards": ["Graphic Cards", "Graphics Cards", "Graphic Card", "Cards", "GPU"],
         "graphic cards": ["Graphic Cards", "Graphics Cards", "Graphic Card", "Cards", "GPU"],
         "graphic card": ["Graphic Cards", "Graphics Cards", "Graphic Card", "Cards", "GPU"],
