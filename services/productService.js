@@ -4,6 +4,96 @@ const escapeRegex = (text) => {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
+const categoryMap = {
+    // GPUs / Graphics cards
+    gpu: ["Graphic Cards", "Cards"],
+    gpus: ["Graphic Cards", "Cards"],
+    "graphic card": ["Graphic Cards", "Cards"],
+    "graphic cards": ["Graphic Cards", "Cards"],
+    "graphics card": ["Graphic Cards", "Cards"],
+    "graphics cards": ["Graphic Cards", "Cards"],
+    "video card": ["Graphic Cards", "Cards"],
+    "video cards": ["Graphic Cards", "Cards"],
+    vga: ["Graphic Cards", "Cards"],
+    rtx: ["Graphic Cards", "Cards"],
+    gtx: ["Graphic Cards", "Cards"],
+    radeon: ["Graphic Cards", "Cards"],
+
+    // CPUs / Processors
+    cpu: ["Processors"],
+    cpus: ["Processors"],
+    processor: ["Processors"],
+    processors: ["Processors"],
+    intel: ["Processors"],
+    ryzen: ["Processors"],
+
+    // Motherboards
+    motherboard: ["Motherboards"],
+    motherboards: ["Motherboards"],
+    mobo: ["Motherboards"],
+    mainboard: ["Motherboards"],
+
+    // Power Supplies
+    psu: ["Power Supply"],
+    psus: ["Power Supply"],
+    "power supply": ["Power Supply"],
+    "power supplies": ["Power Supply"],
+
+    // RAM / Memory
+    ram: ["RAM"],
+    memory: ["RAM"],
+    ddr4: ["RAM"],
+    ddr5: ["RAM"],
+
+    // Storage / SSD
+    ssd: ["SSD"],
+    ssds: ["SSD"],
+    storage: ["SSD"],
+    hdd: ["SSD"],
+    "hard drive": ["SSD"],
+    nvme: ["SSD"],
+
+    // Laptops
+    laptop: ["Laptops"],
+    laptops: ["Laptops"],
+    "gaming laptop": ["Laptops"],
+    "gaming laptops": ["Laptops"],
+    "budget laptop": ["Laptops"],
+    "budget laptops": ["Laptops"],
+    notebook: ["Laptops"],
+
+    // Cameras
+    camera: ["Cameras"],
+    cameras: ["Cameras"],
+    dslr: ["Cameras"],
+    mirrorless: ["Cameras"],
+
+    // Drones
+    drone: ["Drones"],
+    drones: ["Drones"],
+
+    // PC Cases
+    case: ["PC Cases"],
+    cases: ["PC Cases"],
+    "pc case": ["PC Cases"],
+    "pc cases": ["PC Cases"],
+
+    // Keyboards
+    keyboard: ["Keyboards"],
+    keyboards: ["Keyboards"],
+
+    // General Hardware
+    hardware: [
+        "Processors",
+        "Graphic Cards",
+        "Cards",
+        "RAM",
+        "SSD",
+        "Motherboards",
+        "Power Supply",
+    ],
+};
+
 export const searchProducts = async ({
     search,
     category,
@@ -20,51 +110,76 @@ export const searchProducts = async ({
 
     // Search
     if (search) {
-        const safeSearch = escapeRegex(search);
+        const trimmedSearch = search.trim();
+        const safeSearch = escapeRegex(trimmedSearch);
+        const lowerSearch = trimmedSearch.toLowerCase();
 
-        query.$or = [
+        const descRegex = safeSearch.length <= 3 ? `\\b${safeSearch}\\b` : safeSearch;
+
+        const orConditions = [
             { name: { $regex: safeSearch, $options: "i" } },
-            { description: { $regex: safeSearch, $options: "i" } },
+            { description: { $regex: descRegex, $options: "i" } },
             { category: { $regex: safeSearch, $options: "i" } },
             { brand: { $regex: safeSearch, $options: "i" } },
         ];
+
+        // Check if keyword directly matches or contains a category alias (e.g. "gpus", "gpu", "rtx")
+        if (categoryMap[lowerSearch]) {
+            const mappedCats = categoryMap[lowerSearch];
+            orConditions.push({
+                category: {
+                    $in: mappedCats.map(
+                        (catName) => new RegExp(`^${escapeRegex(catName)}$`, "i")
+                    ),
+                },
+            });
+        }
+
+        // If search ends with 's' (e.g. "gpus" -> "gpu", "laptops" -> "laptop")
+        if (lowerSearch.endsWith("s")) {
+            const singular = lowerSearch.slice(0, -1);
+            if (categoryMap[singular]) {
+                const mappedCats = categoryMap[singular];
+                orConditions.push({
+                    category: {
+                        $in: mappedCats.map(
+                            (catName) => new RegExp(`^${escapeRegex(catName)}$`, "i")
+                        ),
+                    },
+                });
+            }
+        }
+
+        query.$or = orConditions;
     }
 
     // Category
     if (category) {
-        const categoryMap = {
-            "gaming laptops": "Laptops",
-            "budget laptops": "Laptops",
-            "laptops": "Laptops",
-            "laptop": "Laptops",
-
-            "graphics cards": "GPU",
-            gpu: "GPU",
-            psu: "PSU",
-            storage: "Storage",
-            ssd: "Storage",
-            hdd: "Storage",
-            processors: "CPU",
-            cpu: "CPU",
-            ram: "RAM",
-            memory: "RAM",
-            motherboard: "Motherboard",
-            cameras: "Cameras",
-            drones: "Drones",
-        };
-
         const normalizedCategory = category.toLowerCase().trim();
 
         if (categoryMap[normalizedCategory]) {
+            const mappedCats = categoryMap[normalizedCategory];
             query.category = {
-                $regex: `^${escapeRegex(categoryMap[normalizedCategory])}$`,
-                $options: "i",
+                $in: mappedCats.map(
+                    (catName) => new RegExp(`^${escapeRegex(catName)}$`, "i")
+                ),
             };
         } else {
-            query.category = {
-                $regex: escapeRegex(category),
-                $options: "i",
-            };
+            // Check singular if ends with 's'
+            const singular = normalizedCategory.endsWith("s") ? normalizedCategory.slice(0, -1) : "";
+            if (singular && categoryMap[singular]) {
+                const mappedCats = categoryMap[singular];
+                query.category = {
+                    $in: mappedCats.map(
+                        (catName) => new RegExp(`^${escapeRegex(catName)}$`, "i")
+                    ),
+                };
+            } else {
+                query.category = {
+                    $regex: escapeRegex(category),
+                    $options: "i",
+                };
+            }
         }
     }
 

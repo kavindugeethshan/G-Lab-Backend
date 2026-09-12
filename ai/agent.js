@@ -84,45 +84,30 @@ export async function runAgent(userMessage) {
             limit: args.limit,
         });
 
-        if (functionCall.name === "searchProducts") {
-            const args = functionCall.arguments || {};
+        // Send tool result back to Gemini
+        const finalResponse = await ai.interactions.create({
+            model: "gemini-3.6-flash",
+            previous_interaction_id: response.id,
+            input: [
+                {
+                    type: "function_result",
+                    name: functionCall.name,
+                    call_id: functionCall.id,
+                    result: [
+                        {
+                            type: "text",
+                            text: JSON.stringify(result),
+                        },
+                    ],
+                },
+            ],
+        });
 
-            const result = await searchProducts({
-                search: args.search,
-                category: args.category,
-                brand: args.brand,
-                minPrice: args.minPrice,
-                maxPrice: args.maxPrice,
-                limit: args.limit,
-            });
-
-            // Send tool result back to Gemini
-            const finalResponse = await ai.interactions.create({
-                model: "gemini-3.6-flash",
-                previous_interaction_id: response.id,
-                input: [
-                    {
-                        type: "function_result",
-                        name: functionCall.name,
-                        call_id: functionCall.id,
-                        result: [
-                            {
-                                type: "text",
-                                text: JSON.stringify(result),
-                            },
-                        ],
-                    },
-                ],
-            });
-            //console.log("\nFinal Gemini Response:");
-            //console.log(JSON.stringify(finalResponse, null, 2));
-
-            return {
-                message: finalResponse.output_text || "No response generated.",
-                products: result.products,
-                pagination: result.pagination,
-            };
-        }
+        return {
+            message: finalResponse.output_text || "No response generated.",
+            products: result.products,
+            pagination: result.pagination,
+        };
     }
 
     return {
