@@ -31,7 +31,6 @@ const passwordResetSchema = new mongoose.Schema(
 
         lastSentAt: {
             type: Date,
-            default: Date.now,
         },
     },
     { timestamps: true }

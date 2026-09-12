@@ -816,11 +816,18 @@ export const forgotPassword = async (req, res) => {
 
     // Enforce 60-second cooldown between reset requests
     const existingReset = await PasswordReset.findOne({ email: cleanEmail });
-    if (existingReset && existingReset.lastSentAt && (Date.now() - new Date(existingReset.lastSentAt).getTime() < 60000)) {
-      const waitSeconds = Math.ceil((60000 - (Date.now() - new Date(existingReset.lastSentAt).getTime())) / 1000);
-      return res.status(429).json({
-        message: `Please wait ${waitSeconds} seconds before requesting another password reset code.`,
-      });
+    if (existingReset) {
+      if (existingReset.expiresAt && new Date() > new Date(existingReset.expiresAt)) {
+        await PasswordReset.deleteOne({ _id: existingReset._id });
+      } else if (existingReset.lastSentAt) {
+        const timeDiff = Date.now() - new Date(existingReset.lastSentAt).getTime();
+        if (timeDiff > 1000 && timeDiff < 60000) {
+          const waitSeconds = Math.ceil((60000 - timeDiff) / 1000);
+          return res.status(429).json({
+            message: `Please wait ${waitSeconds} seconds before requesting another password reset code.`,
+          });
+        }
+      }
     }
 
     // Generate cryptographically secure OTP and hash it
